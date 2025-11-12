@@ -8,9 +8,8 @@
 #include <fstream>
 
 #define PORT 8080
-#define KEY 0x5A   // Simple XOR encryption key
+#define KEY 0x5A   
 
-// ---------- XOR Encrypt/Decrypt ----------
 std::string xorEncryptDecrypt(const std::string &data) {
     std::string result = data;
     for (size_t i = 0; i < data.size(); ++i)
@@ -18,7 +17,6 @@ std::string xorEncryptDecrypt(const std::string &data) {
     return result;
 }
 
-// ---------- List Files ----------
 std::string listFiles(const std::string &path) {
     DIR *dir;
     struct dirent *entry;
@@ -34,7 +32,6 @@ std::string listFiles(const std::string &path) {
     return files.str();
 }
 
-// ---------- Read a File ----------
 std::string readFileContent(const std::string &filename) {
     std::ifstream file("server/server_files/" + filename, std::ios::binary);
     if (!file.is_open()) return "ERROR: File not found";
@@ -43,7 +40,6 @@ std::string readFileContent(const std::string &filename) {
     return ss.str();
 }
 
-// ---------- Authentication (reads from users.txt) ----------
 bool authenticate(int socket) {
     char buffer[1024] = {0};
     read(socket, buffer, sizeof(buffer));
@@ -77,7 +73,6 @@ bool authenticate(int socket) {
     }
 }
 
-// ---------- Main ----------
 int main() {
     int server_fd, new_socket;
     struct sockaddr_in address;
@@ -108,7 +103,6 @@ int main() {
 
         std::cout << "👋 Client connected.\n";
 
-        // ---- Authenticate ----
         if (!authenticate(new_socket)) {
             std::cout << "❌ Authentication failed. Closing connection.\n";
             close(new_socket);
@@ -116,7 +110,6 @@ int main() {
         }
         std::cout << "🔐 Client authenticated successfully.\n";
 
-        // ---- Receive Command ----
         memset(buffer, 0, sizeof(buffer));
         read(new_socket, buffer, 1024);
         std::string command = xorEncryptDecrypt(std::string(buffer));
@@ -138,7 +131,6 @@ int main() {
             std::string filename = command.substr(4);
             std::cout << "⬆️ Receiving file (encrypted): " << filename << "\n";
 
-            // Acknowledge ready state
             std::string ready = xorEncryptDecrypt("READY");
             send(new_socket, ready.c_str(), ready.size(), 0);
 
