@@ -8,7 +8,6 @@
 #define PORT 8080
 #define KEY 0x5A   // Same key as server
 
-// ---------- XOR Encrypt/Decrypt ----------
 std::string xorEncryptDecrypt(const std::string &data) {
     std::string result = data;
     for (size_t i = 0; i < data.size(); ++i)
@@ -16,7 +15,6 @@ std::string xorEncryptDecrypt(const std::string &data) {
     return result;
 }
 
-// ---------- File Download ----------
 void downloadFile(const std::string &filename) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_addr{};
@@ -25,7 +23,6 @@ void downloadFile(const std::string &filename) {
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
     connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
-    // Authenticate
     std::string user = "admin";
     std::string pass = "1234";
     std::string creds = user + ":" + pass;
@@ -40,7 +37,6 @@ void downloadFile(const std::string &filename) {
         return;
     }
 
-    // Request file
     std::string command = xorEncryptDecrypt("GET " + filename);
     send(sock, command.c_str(), command.size(), 0);
     std::cout << "📥 Requesting file: " << filename << "\n";
@@ -59,7 +55,6 @@ void downloadFile(const std::string &filename) {
     close(sock);
 }
 
-// ---------- File Upload ----------
 void uploadFile(const std::string &filename) {
     std::ifstream infile("client/" + filename, std::ios::binary);
     if (!infile.is_open()) {
@@ -74,7 +69,6 @@ void uploadFile(const std::string &filename) {
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
     connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
-    // Authenticate
     std::string user = "admin";
     std::string pass = "1234";
     std::string creds = user + ":" + pass;
@@ -88,11 +82,9 @@ void uploadFile(const std::string &filename) {
         return;
     }
 
-    // Send command
     std::string command = xorEncryptDecrypt("PUT " + filename);
     send(sock, command.c_str(), command.size(), 0);
 
-    // Wait for READY
     char ack[16] = {0};
     read(sock, ack, sizeof(ack));
     std::string ready = xorEncryptDecrypt(std::string(ack));
@@ -102,7 +94,6 @@ void uploadFile(const std::string &filename) {
         return;
     }
 
-    // Send encrypted file
     char buffer[4096];
     while (infile.read(buffer, sizeof(buffer)) || infile.gcount() > 0) {
         std::string chunk(buffer, infile.gcount());
@@ -115,7 +106,6 @@ void uploadFile(const std::string &filename) {
     std::cout << "⬆️ File '" << filename << "' encrypted and uploaded successfully.\n";
 }
 
-// ---------- Main ----------
 int main() {
     while (true) {
         int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -125,7 +115,6 @@ int main() {
         inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
         connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
-        // Authenticate
         std::string user = "admin";
         std::string pass = "1234";
         std::string creds = user + ":" + pass;
@@ -140,7 +129,6 @@ int main() {
         }
         std::cout << "✅ Authenticated successfully!\n";
 
-        // Request file list
         std::string command = xorEncryptDecrypt("LIST");
         send(sock, command.c_str(), command.size(), 0);
         char buffer[4096] = {0};
@@ -149,7 +137,6 @@ int main() {
         std::cout << "📄 Files on server:\n" << decrypted << "\n";
         close(sock);
 
-        // Menu
         int choice;
         std::cout << "\n1️⃣ Download file\n2️⃣ Upload file\n3️⃣ Exit\nEnter choice: ";
         std::cin >> choice;
